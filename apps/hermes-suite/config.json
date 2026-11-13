@@ -1,0 +1,40 @@
+{
+  "name": "Hermes Suite",
+  "id": "hermes-suite",
+  "available": false,
+  "exposable": true,
+  "no_gui": false,
+  "dynamic_config": true,
+  "port": 8787,
+  "tipi_version": 1,
+  "version": "0.23.1",
+  "categories": [
+    "ai"
+  ],
+  "description": "Hermes Agent and Hermes WebUI in two separate Docker services. Catalog draft pending verification.",
+  "short_desc": "Self-hosted Hermes AI agent with WebUI",
+  "author": "NousResearch (Agent) and nesquena (WebUI)",
+  "source": "https://github.com/NousResearch/hermes-agent",
+  "website": "https://github.com/nesquena/hermes-webui",
+  "form_fields": [
+    {
+      "type": "password",
+      "label": "Hermes gateway API key (minimum 16 characters)",
+      "required": true,
+      "env_variable": "API_SERVER_KEY",
+      "regex": "^.{16,}$",
+      "pattern_error": "Minimum 16 characters"
+    },
+    {
+      "type": "password",
+      "label": "Hermes WebUI password",
+      "required": true,
+      "env_variable": "HERMES_WEBUI_PASSWORD"
+    }
+  ],
+  "supported_architectures": [
+    "amd64",
+    "arm64"
+  ],
+  "min_tipi_version": "4.12.0"
+}
