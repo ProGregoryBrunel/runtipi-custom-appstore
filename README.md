@@ -35,11 +35,12 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Compare the full non-secret structure of current Runtipi-generated Compose, user override, and new Compose.
 - [x] Confirm running UID/GID values are 1000 for both services; gateway keys match and WebUI password is configured (no values published).
 - [x] Preserve running WebUI cache limit 4 using a configurable Compose default.
-- [ ] Confirm target file ownership, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
-- [ ] Classify existing secret sources in the current Compose and override, never displaying values or committing local findings.
+- [x] Verify the current Agent uses `gateway run` and the existing WebUI healthcheck is supplied by its pinned image.
+- [ ] Confirm target file ownership, SearXNG external network via VPS-specific user-config, remaining environment names, and internal API URL.
+- [x] Classify existing secret sources in current Compose and override, without exposing or committing values.
 - [x] Current production WebUI requires authentication; catalog form retains a required password (the existing value must be retained securely during migration).
 - [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
-- [x] Parse the exact published Compose blob (`4d4ed524dc4f2ee5dc52eec3faab97de4ac900bb`) with PyYAML; verify both services, port 8787, schema v2 and cache value.
+- [x] Complete static review of the draft Compose (both services, port 8787, schema v2, shared code volume, authentication variables). Runtime validation of the catalog install is still pending.
 - [ ] Validate the completed Compose in the target Runtipi runtime before enabling it.
 - [x] Document the migration and rollback checkpoints for `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
 - [ ] Test and approve the migration method on the VPS; documentation does not authorize changing production.
