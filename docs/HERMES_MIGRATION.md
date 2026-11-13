@@ -52,6 +52,25 @@ The old and new `app.env` files are separate, and the Docker Compose invocation 
 
 A custom App Store entry and `tipi_version` do not automatically update existing `_user` applications. In Runtipi v4.12.0 the custom-app create/edit API does not offer a supported way to reassign an existing installed `_user` app to another store; `templateUrn` is not an automatic upgrade bridge. Do not assume the custom app can be linked to new catalog updates by editing metadata. Do not manually alter the Runtipi application database to impersonate a store app.
 
+## SearXNG connectivity: target-only Compose override
+
+The public catalog Compose deliberately contains no reference to the production-only external SearXNG network. After the future store slug is known, use a **target-app-specific** override under Runtipi's `user-config/<store-slug>/hermes-suite/docker-compose.yml`, based on this *non-secret* snippet:
+
+```yaml
+services:
+  hermes-agent:
+    networks:
+      hermes-searxng: {}
+
+networks:
+  hermes-searxng:
+    external: true
+```
+
+When Docker Compose merges this mapping with the Runtipi-generated file, it should retain the Runtipi-created private network. **Verify the effective Compose** before starting; do not copy the existing `_user` override because it pins paths and volume versions.
+
+Preserve the existing Traefik routing **through Runtipi exposure settings**, not by copying old routing labels: the app URN and resulting router identifiers differ.
+
 ## Validation gates before any VPS changes
 
 1. Compare the real generated Compose **with the active user override**, only showing non-secret structure. UID/GID, WebUI password presence, gateway-key matching, and WebUI agent-cache limit have been verified; **still verify file ownership, command, healthcheck, full network topology, and all volumes**.
