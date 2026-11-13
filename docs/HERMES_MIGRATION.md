@@ -10,6 +10,7 @@
 - WebUI is the Runtipi main service, internal port `8787`, on `tipi_main_network`.
 - Agent and WebUI share a Runtipi private application network; Agent additionally reaches the external `hermes-searxng` network on the current VPS.
 - Agent API has no published host port.
+- Final runtime check: running Agent command is exactly `gateway run`; running WebUI healthcheck is present and **identical to the healthcheck baked into** `ghcr.io/nesquena/hermes-webui:0.52.677`. No extra healthcheck configuration is required in the candidate Compose.
 - Verified running container settings: `HERMES_UID=1000`, `HERMES_GID=1000`, `WANTED_UID=1000`, `WANTED_GID=1000`.
 - Gateway API key matches between containers (**values not disclosed**).
 - WebUI password is configured (**value not disclosed**).
@@ -73,7 +74,7 @@ Preserve the existing Traefik routing **through Runtipi exposure settings**, not
 
 ## Validation gates before any VPS changes
 
-1. Compare the real generated Compose **with the active user override**, only showing non-secret structure. UID/GID, WebUI password presence, gateway-key matching, and WebUI agent-cache limit have been verified; **still verify file ownership, command, healthcheck, full network topology, and all volumes**.
+1. Compare the real generated Compose **with the active user override**, only showing non-secret structure. UID/GID, WebUI password presence, gateway-key matching, WebUI agent-cache limit, Agent command and WebUI image healthcheck have been verified; **still verify target file ownership, complete app-specific settings, SearXNG override and the expected route behavior before the cutover**.
 2. **Verified:** the gateway API key is identical in the current agent and WebUI. Preserve the existing secret during migration, rather than silently generating a replacement or exposing it in logs.
 3. Decide how to reproduce the **VPS-specific** `hermes-searxng` external network in the target app's Runtipi `user-config`. It is intentionally absent from the portable catalog Compose.
 4. Review the Runtipi-managed domain, local domain, Traefik routing, authentication and restart policies. Avoid binding the same domain to both app identities.
