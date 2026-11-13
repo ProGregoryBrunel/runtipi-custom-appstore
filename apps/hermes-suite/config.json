@@ -9,9 +9,9 @@
   "tipi_version": 1,
   "version": "0.23.1",
   "categories": [
-    "utilities"
+    "ai"
   ],
-  "description": "Hermes Agent and Hermes WebUI as a two-container Runtipi application. Draft: not yet approved for installation.",
+  "description": "Hermes Agent and Hermes WebUI in two separate Docker services. Catalog draft pending verification.",
   "short_desc": "Self-hosted Hermes AI agent with WebUI",
   "author": "NousResearch (Agent) and nesquena (WebUI)",
   "source": "https://github.com/NousResearch/hermes-agent",
@@ -21,7 +21,9 @@
       "type": "password",
       "label": "Hermes gateway API key (minimum 16 characters)",
       "required": true,
-      "env_variable": "API_SERVER_KEY"
+      "env_variable": "API_SERVER_KEY",
+      "regex": "^.{16,}$",
+      "pattern_error": "Minimum 16 characters"
     },
     {
       "type": "password",
