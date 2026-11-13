@@ -26,6 +26,26 @@
 - Live WebUI, gateway and Telegram were tested successfully **before any catalog migration**.
 - **A native restore has NOT been tested.** The versioned source-code volume is NOT in the Runtipi native archive.
 
+## Read-only VPS preflight findings (13 November 2026)
+
+The production user confirmed these facts by `docker inspect` and filesystem metadata, **without printing credentials or domains**:
+
+- Agent restart policy `unless-stopped`; no Docker healthcheck; no Traefik routes; three attached networks (current default, current Runtipi app-private network, and `hermes-searxng`).
+- WebUI restart policy `unless-stopped`; Docker healthcheck present; **two** Traefik route rules; attached to Runtipi app-private and `runtipi_tipi_main_network`.
+- Expected app-data bind mounts and the read-only WebUI shared-code mount were verified.
+- `hermes-home`: `1000:1000`, mode `0777`; `workspace`: `1000:1000`, `0777`; `opt-data`: `1000:10000`, `0777`. **Do not normalize the `opt-data` group blindly.**
+- Generated `app-data/_user/hermes-suite/app.env`: `0777`; currently contains Runtipi app metadata variable names only.
+- Protected `user-config/_user/hermes-suite/app.env`: `0600`, currently contains the `HERMES_WEBUI_GATEWAY_API_KEY` variable.
+- `hermes-searxng`: existing non-internal `bridge` network.
+
+**Security concern confirmed in Runtipi v4.12.0 upstream source:** `AppFilesManager.setAppDataDirPermissionsOnLinux` traverses an application's `app-data` tree and calls `chmod(entryStats.mode | 0o777)` on regular files and directories. This causes **all regular files** under an affected app data tree to be mode `0777`, not only directories. It is called in the lifecycle preparation path and after installs. This may recur after app management operations. A blind recursive `chmod` is not a durable fix; avoid changing ownership/mode without checking parent directory traversal, bind-mounted user access, Runtipi backend permissions and consequences for other apps. Do not assume `user-config` gets chmod'd the same way; this code path specifically targets `app-data`.
+
+Before approving any migration, perform a short **read-only ancestor permission audit** and select an access-control mitigation that survives Runtipi lifecycle operations; the security control must not break Hermes state writes or Runtipi backups. No security remediation has been deployed yet.
+
+## Remaining prerequisite before executing a cutover
+
+Read-only check of path traversal and Runtipi process identities. The audit must report **only paths, ownership and modes**, never file contents. Afterwards, compare generated Traefik and SearXNG wiring. The target store slug is provisional until registered.
+
 ## Application identity and storage implications
 
 Runtipi identifies apps by `<app-name>:<store-slug>`. The current `hermes-suite:_user` and a future `hermes-suite:<new-store-slug>` are **different applications**, even if their Compose services have the same names. Their app-data, user-config, backups, database records, networks, Docker projects, and ingress configuration are not automatically migrated.
