@@ -33,6 +33,8 @@ services:
       - HERMES_WEBUI_PORT=8787
       - HERMES_WEBUI_STATE_DIR=/home/hermeswebui/.hermes/webui
       - HERMES_WEBUI_DEFAULT_WORKSPACE=/workspace
+      # Current VPS uses 4; configurable per installation without a fork.
+      - HERMES_WEBUI_AGENT_CACHE_MAX=${HERMES_WEBUI_AGENT_CACHE_MAX:-4}
       - HERMES_API_URL=http://hermes-agent:8642
       - HERMES_WEBUI_GATEWAY_API_KEY=${API_SERVER_KEY}
       - HERMES_WEBUI_PASSWORD=${HERMES_WEBUI_PASSWORD}
