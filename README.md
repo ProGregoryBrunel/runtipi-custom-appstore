@@ -38,6 +38,7 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Confirm target file ownership, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
 - [x] Current production WebUI requires authentication; catalog form retains a required password (the existing value must be retained securely during migration).
 - [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
+- [x] Parse the exact published Compose blob (`4d4ed524dc4f2ee5dc52eec3faab97de4ac900bb`) with PyYAML; verify both services, port 8787, schema v2 and cache value.
 - [ ] Validate the completed Compose in the target Runtipi runtime before enabling it.
 - [x] Document the migration and rollback checkpoints for `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
 - [ ] Test and approve the migration method on the VPS; documentation does not authorize changing production.
