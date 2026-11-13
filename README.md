@@ -45,6 +45,7 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Preserve native backups and historical Docker volumes. Do not install both instances against the same live Hermes data.
 - [ ] Validate code-volume refresh on an Agent image change; do not reuse old source under a new tag.
 - [ ] Validate native backup/restore, including hard-link behavior and backup archive permissions.
+- [ ] Assess and mitigate **upstream Runtipi v4.12.0 permissions**: it recursively sets regular app-data files and directories to mode `0777` during lifecycle operations. Do not apply blind recursive chmod; inspect parent traversal and service identities first. See the migration guide.
 - [ ] Only after review: set `available: true` and publish a `tipi_version` increment.
 
 See [Hermes migration and rollback plan](docs/HERMES_MIGRATION.md) before any production action.
