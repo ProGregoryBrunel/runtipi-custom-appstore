@@ -33,8 +33,10 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 ### Release checklist
 
 - [ ] Compare the full non-secret structure of current Runtipi-generated Compose, user override, and new Compose.
-- [ ] Confirm actual UID/GID, storage, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
-- [ ] Decide whether the WebUI password should be required, inherited, or optional.
+- [x] Confirm running UID/GID values are 1000 for both services; gateway keys match and WebUI password is configured (no values published).
+- [x] Preserve running WebUI cache limit 4 using a configurable Compose default.
+- [ ] Confirm target file ownership, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
+- [x] Current production WebUI requires authentication; catalog form retains a required password (the existing value must be retained securely during migration).
 - [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
 - [ ] Validate the completed Compose in the target Runtipi runtime before enabling it.
 - [x] Document the migration and rollback checkpoints for `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
