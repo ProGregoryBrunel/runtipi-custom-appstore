@@ -9,7 +9,7 @@
   "tipi_version": 1,
   "version": "0.23.1",
   "categories": [
-    "ai"
+    "utilities"
   ],
   "description": "Hermes Agent and Hermes WebUI as a two-container Runtipi application. Draft: not yet approved for installation.",
   "short_desc": "Self-hosted Hermes AI agent with WebUI",
