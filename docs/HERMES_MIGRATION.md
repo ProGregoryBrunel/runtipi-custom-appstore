@@ -34,6 +34,9 @@ The following facts **must be verified locally**, but the results must **not be 
 - Effective parent-directory permissions and confidential file modes.
 - Exact backup artifact paths, restore readiness, and any legacy volumes.
 - Source of secrets in Compose/user-config, classified by key name and whether a value is referenced or embedded. Never print raw values.
+- **Observed locally**: legacy custom-app source and generated Compose define `API_SERVER_KEY` and `HERMES_WEBUI_PASSWORD` using direct values; the legacy user override references a `HERMES_WEBUI_GATEWAY_API_KEY` variable from private user env. The gateway values were previously verified equal at runtime. Treat all legacy Compose copies as **containing credentials**, regardless of file permissions. Do not publish, paste, or blindly copy these files.
+- **Target catalog design**: its `config.json` declares `API_SERVER_KEY` and `HERMES_WEBUI_PASSWORD` as required password-form fields. Its Compose forwards the **same** `API_SERVER_KEY` to the Agent and WebUI (gateway). During migration, securely preserve and reuse the existing values in the target Runtipi form or a private root-only configuration. Avoid accidental key rotation, which could disconnect the gateway, WebUI and clients.
+- **Remaining work**: assess the Runtipi form-to-`app.env` permission behavior before entering production secrets; `app-data` is subject to the Runtipi 4.12.0 permission widening mechanism. Do not send credentials into ChatGPT or GitHub.
 
 **Runtipi 4.12.0 upstream behavior:** the `setAppDataDirPermissionsOnLinux` function performs `chmod(existing_mode | 0o777)` on regular files and directories under application data during lifecycle actions. This can temporarily or persistently widen access. Individual applications may later set their own private file modes; do not infer the current mode of a secret from this upstream function alone. For a durable mitigation, assess parent-directory traversal and all service identities, without blindly applying recursive `chmod` or `chown`. Keep this as a separately tracked infrastructure hardening concern, and ensure the migration itself does not worsen access control.
 
@@ -47,7 +50,7 @@ The source code of Runtipi v4.12.0 confirms each app Compose project name is der
 
 The old and new `app.env` files are separate, and the Docker Compose invocation combines each app's generated `app-data/<store>/<name>/app.env` with optional `user-config/<store>/<name>/app.env`. Preserve the gateway key and WebUI password through the target Runtipi install configuration, without printing them into logs, committing them to Git, or leaving plaintext world-readable. The current `_user` override must **not** be copied wholesale: it contains old-path/image and old-volume pins that could quietly bypass the new catalog versions. Create a minimal target-specific override that only adds the required external `hermes-searxng` network and truly site-specific settings, while retaining Runtipi's generated private network. Validate effective Compose before startup.
 
-A custom App Store entry and `tipi_version` do not automatically update existing `_user` applications. Do not manually alter the Runtipi application database to impersonate a store app.
+A custom App Store entry and `tipi_version` do not automatically update existing `_user` applications. In Runtipi v4.12.0 the custom-app create/edit API does not offer a supported way to reassign an existing installed `_user` app to another store; `templateUrn` is not an automatic upgrade bridge. Do not assume the custom app can be linked to new catalog updates by editing metadata. Do not manually alter the Runtipi application database to impersonate a store app.
 
 ## Validation gates before any VPS changes
 
