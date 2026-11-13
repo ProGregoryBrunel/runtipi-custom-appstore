@@ -33,14 +33,18 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 ### Release checklist
 
 - [ ] Compare the full non-secret structure of current Runtipi-generated Compose, user override, and new Compose.
-- [ ] Confirm actual UID/GID, storage, SearXNG external network, WebUI entrypoint, environment names, and internal API URL.
+- [ ] Confirm actual UID/GID, storage, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
 - [ ] Decide whether the WebUI password should be required, inherited, or optional.
-- [ ] Verify Runtipi v4.12.0 schema, permitted categories, app metadata and logo requirements.
-- [ ] Document rollback and migration of `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
+- [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
+- [ ] Validate the completed Compose in the target Runtipi runtime before enabling it.
+- [x] Document the migration and rollback checkpoints for `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
+- [ ] Test and approve the migration method on the VPS; documentation does not authorize changing production.
 - [ ] Preserve native backups and historical Docker volumes. Do not install both instances against the same live Hermes data.
 - [ ] Validate code-volume refresh on an Agent image change; do not reuse old source under a new tag.
 - [ ] Validate native backup/restore, including hard-link behavior and backup archive permissions.
 - [ ] Only after review: set `available: true` and publish a `tipi_version` increment.
+
+See [Hermes migration and rollback plan](docs/HERMES_MIGRATION.md) before any production action.
 
 No API keys, passwords, `.env` files, personal data, production domains, or server secrets belong in this repository.
 
