@@ -20,16 +20,20 @@
     {
       "type": "password",
       "label": "Hermes gateway API key (minimum 16 characters)",
-      "required": true,
+      "required": false,
       "env_variable": "API_SERVER_KEY",
       "regex": "^.{16,}$",
-      "pattern_error": "Minimum 16 characters"
+      "pattern_error": "Minimum 16 characters",
+      "hint": "Required at runtime. For migrations with a private user-config/app.env defining API_SERVER_KEY, leave this blank. Otherwise enter a unique secret (min 16 characters); Runtipi stores form values in app-data/app.env.",
+      "placeholder": "Leave empty only when configured in private user-config/app.env"
     },
     {
       "type": "password",
       "label": "Hermes WebUI password",
-      "required": true,
-      "env_variable": "HERMES_WEBUI_PASSWORD"
+      "required": false,
+      "env_variable": "HERMES_WEBUI_PASSWORD",
+      "hint": "Required at runtime. For migrations with a private user-config/app.env defining HERMES_WEBUI_PASSWORD, leave this blank. Otherwise enter a strong password; Runtipi stores form values in app-data/app.env.",
+      "placeholder": "Leave empty only when configured in private user-config/app.env"
     }
   ],
   "supported_architectures": [
