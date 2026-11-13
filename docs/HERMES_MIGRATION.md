@@ -20,33 +20,22 @@
   - `/opt/runtipi/app-data/_user/hermes-suite/workspace` -> `/workspace` on both
   - Named volume `hermes-suite__user_hermes-agent-src-v0231` -> Agent `/opt/hermes`, WebUI `/home/hermeswebui/.hermes/hermes-agent:ro`
 - User override: `/opt/runtipi/user-config/_user/hermes-suite/docker-compose.yml` and protected `app.env`.
-- Native backup exists and is listed in Runtipi: `/opt/runtipi/backups/_user/hermes-suite/hermes-suite-_user-1794510837912.tar.gz`.
-- Backup was inspected: 14,329 `hermes-home` files, 584 `opt-data`, 50 `workspace`, 5 `user-config`. Eight files under `backups` were intentionally excluded by Runtipi.
-- Archive permission is `0600`; parent backup directory `0700`. Regular hard links in app-data were eliminated, and the scan returned zero after services restarted.
+- A native Runtipi backup exists, has been inspected, and is visible in the current Runtipi UI. Preserve and reverify it locally before any migration. Do not publish host-specific archive paths, data counts, or credential information.
 - Live WebUI, gateway and Telegram were tested successfully **before any catalog migration**.
 - **A native restore has NOT been tested.** The versioned source-code volume is NOT in the Runtipi native archive.
 
-## Read-only VPS preflight findings (13 November 2026)
+## Production-specific preflight (private checklist)
 
-The production user confirmed these facts by `docker inspect` and filesystem metadata, **without printing credentials or domains**:
+The following facts **must be verified locally**, but the results must **not be committed to this public repository**:
 
-- Agent restart policy `unless-stopped`; no Docker healthcheck; no Traefik routes; three attached networks (current default, current Runtipi app-private network, and `hermes-searxng`).
-- WebUI restart policy `unless-stopped`; Docker healthcheck present; **two** Traefik route rules; attached to Runtipi app-private and `runtipi_tipi_main_network`.
-- Expected app-data bind mounts and the read-only WebUI shared-code mount were verified.
-- `hermes-home`: `1000:1000`, mode `0777`; `workspace`: `1000:1000`, `0777`; `opt-data`: `1000:10000`, `0777`. **Do not normalize the `opt-data` group blindly.**
-- Generated `app-data/_user/hermes-suite/app.env`: `0777`; currently contains Runtipi app metadata variable names only.
-- Protected `user-config/_user/hermes-suite/app.env`: `0600`, currently contains the `HERMES_WEBUI_GATEWAY_API_KEY` variable.
-- `hermes-searxng`: existing non-internal `bridge` network.
+- Actual UID/GID of both containers and ownership of persistent mounts.
+- Presence of WebUI authentication and equality of the Agent/WebUI gateway keys, without logging values.
+- Presence of the existing SearXNG network, current restart/healthcheck policies and Traefik routing.
+- Effective parent-directory permissions and confidential file modes.
+- Exact backup artifact paths, restore readiness, and any legacy volumes.
+- Source of secrets in Compose/user-config, classified by key name and whether a value is referenced or embedded. Never print raw values.
 
-**Security concern confirmed in Runtipi v4.12.0 upstream source:** `AppFilesManager.setAppDataDirPermissionsOnLinux` traverses an application's `app-data` tree and calls `chmod(entryStats.mode | 0o777)` on regular files and directories. This makes **regular files and directories processed by that lifecycle traversal** mode `0777` at that point in time, not only directories. It does not prove every file is currently in that mode. It is called in the lifecycle preparation path and after installs. This may recur after app management operations. A blind recursive `chmod` is not a durable fix; avoid changing ownership/mode without checking parent directory traversal, bind-mounted user access, Runtipi backend permissions and consequences for other apps. Do not assume `user-config` gets chmod'd the same way; this code path specifically targets `app-data`.
-
-**Ancestor audit performed:** `/`, `/opt`, `/opt/runtipi`, `app-data`, and `_user` are owned by root and mode `0755`. The **root-owned `hermes-suite` directory is `0777`**; `hermes-home` is `0777`, named `hermesfiles:hermesfiles`. At the time of observation `hermes-home/.env` and `state.db` are mode `0600`, and `config.yaml` mode `0640`, all owned by `hermesfiles:hermesfiles`. These confidential files are **not currently world-readable** by their ordinary file modes. However, because the parent and home directories are world-writable, local users/processes with access to the VPS may replace or remove entries in those directories and cannot be considered safely isolated. The Runtipi permission widening is done **at lifecycle-operation time**; files may subsequently return to more restrictive modes, as this observation demonstrates. No security remediation has been deployed yet.
-
-A lasting mitigation must survive Runtipi lifecycle operations and keep bind-mounted Hermes writes and Runtipi backups functional. Avoid blindly applying `chmod -R`, `chown -R` or changing the special current `opt-data` group. This is a risk for the **entire Runtipi app-data permission mechanism**, not a defect unique to our catalog.
-
-## Remaining prerequisite before executing a cutover
-
-The ancestor-path permission audit is complete. Remaining work is to identify the **non-secret source of the current gateway key and WebUI password** (they are present in the running containers but only `HERMES_WEBUI_GATEWAY_API_KEY` appears among the protected user env file's key names), confirm effective WebUI and Agent command/healthcheck behavior, and stage the target store configuration and ingress details. The target store slug is provisional until registered.
+**Runtipi 4.12.0 upstream behavior:** the `setAppDataDirPermissionsOnLinux` function performs `chmod(existing_mode | 0o777)` on regular files and directories under application data during lifecycle actions. This can temporarily or persistently widen access. Individual applications may later set their own private file modes; do not infer the current mode of a secret from this upstream function alone. For a durable mitigation, assess parent-directory traversal and all service identities, without blindly applying recursive `chmod` or `chown`. Keep this as a separately tracked infrastructure hardening concern, and ensure the migration itself does not worsen access control.
 
 ## Application identity and storage implications
 
