@@ -4,7 +4,7 @@ Personal, multi-application Runtipi catalog maintained under the GitHub account 
 
 ## Status
 
-**Draft only.** No app is approved for installation yet. The initial Hermes Suite entry is deliberately marked `available: false` until its Compose, permissions, dependencies, networking, persistent data paths, and update/restore lifecycle are validated.
+**Activation proposal (not yet merged).** This branch changes Hermes Suite to `available: true` so it can appear in Runtipi's App Store. This is not authorization to install it over an existing local Hermes deployment: normal UI installation starts the app, and old/new application identities have separate data paths and routing. The migration plan must be executed separately and deliberately.
 
 ## Structure
 
@@ -41,7 +41,7 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [x] Current production WebUI requires authentication; catalog form retains a required password (the existing value must be retained securely during migration).
 - [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
 - [x] Complete static review of the draft Compose (both services, port 8787, schema v2, shared code volume, authentication variables). Runtime validation of the catalog install is still pending.
-- [ ] Validate the completed Compose in the target Runtipi runtime before enabling it.
+- [ ] Validate the completed Compose in the target Runtipi runtime before any production migration. Catalog visibility is not evidence of a successful deployment.
 - [x] Document the migration and rollback checkpoints for `app-data/_user/hermes-suite`, `user-config/_user/hermes-suite`, and Runtipi ingress settings.
 - [ ] Test and approve the migration method on the VPS; documentation does not authorize changing production.
 - [ ] Preserve native backups and historical Docker volumes. Do not install both instances against the same live Hermes data.
@@ -49,7 +49,8 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Validate native backup/restore, including hard-link behavior and backup archive permissions.
 - [x] Identify the upstream Runtipi v4.12.0 permission-widening mechanism and perform local parent-path review (host-specific findings remain private).
 - [ ] Design a durable access-control mitigation separately, without recursive chmod/chown or disruption of other Runtipi apps. See the migration guide.
-- [ ] Only after review: set `available: true` and publish a `tipi_version` increment.
+- [x] Prepare `available: true` on a dedicated review branch; keep `tipi_version: 1` for the first public listing.
+- [ ] Merge activation only after explicit approval. Then refresh the store; **do not install while the old Hermes instance is running**.
 
 See [Hermes migration and rollback plan](docs/HERMES_MIGRATION.md) before any production action.
 
