@@ -1,0 +1,51 @@
+# DRAFT ONLY. Not for deployment until verified against the live Runtipi stack.
+# Existing _user installation and its user-config/app.env stay untouched.
+services:
+  hermes-agent:
+    image: nousresearch/hermes-agent:v0.23.1
+    command: gateway run
+    environment:
+      - TZ=${TZ}
+      - HERMES_HOME=/home/hermes/.hermes
+      - HERMES_UID=1000
+      - HERMES_GID=1000
+      - HERMES_WRITE_SAFE_ROOT=/workspace
+      - API_SERVER_ENABLED=true
+      - API_SERVER_HOST=0.0.0.0
+      - API_SERVER_PORT=8642
+      - API_SERVER_KEY=${API_SERVER_KEY}
+    volumes:
+      - ${APP_DATA_DIR}/hermes-home:/home/hermes/.hermes
+      - ${APP_DATA_DIR}/opt-data:/opt/data
+      - ${APP_DATA_DIR}/workspace:/workspace
+      - hermes-agent-src-v0231:/opt/hermes
+
+  hermes-webui:
+    image: ghcr.io/nesquena/hermes-webui:0.52.677
+    depends_on:
+      - hermes-agent
+    environment:
+      - TZ=${TZ}
+      - HERMES_WEBUI_HOST=0.0.0.0
+      - HERMES_WEBUI_PORT=8787
+      - HERMES_WEBUI_STATE_DIR=/home/hermeswebui/.hermes/webui
+      - HERMES_WEBUI_DEFAULT_WORKSPACE=/workspace
+      - HERMES_API_URL=http://hermes-agent:8642
+      - HERMES_WEBUI_GATEWAY_API_KEY=${API_SERVER_KEY}
+      - HERMES_WEBUI_PASSWORD=${HERMES_WEBUI_PASSWORD}
+      - HERMES_WRITE_SAFE_ROOT=/workspace
+      - WANTED_UID=1000
+      - WANTED_GID=1000
+    volumes:
+      - ${APP_DATA_DIR}/hermes-home:/home/hermeswebui/.hermes
+      - hermes-agent-src-v0231:/home/hermeswebui/.hermes/hermes-agent:ro
+      - ${APP_DATA_DIR}/workspace:/workspace
+    x-runtipi:
+      is_main: true
+      internal_port: 8787
+
+volumes:
+  hermes-agent-src-v0231:
+
+x-runtipi:
+  schema_version: 2
