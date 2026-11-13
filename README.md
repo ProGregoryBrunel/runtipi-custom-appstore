@@ -36,6 +36,7 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [x] Confirm running UID/GID values are 1000 for both services; gateway keys match and WebUI password is configured (no values published).
 - [x] Preserve running WebUI cache limit 4 using a configurable Compose default.
 - [ ] Confirm target file ownership, SearXNG external network via VPS-specific user-config, WebUI entrypoint, environment names, and internal API URL.
+- [ ] Classify existing secret sources in the current Compose and override, never displaying values or committing local findings.
 - [x] Current production WebUI requires authentication; catalog form retains a required password (the existing value must be retained securely during migration).
 - [x] Verify Runtipi v4.12.0 schema version, supported `ai` category, and fallback behavior when logo is absent (source-level review; runtime installation not tested).
 - [x] Parse the exact published Compose blob (`4d4ed524dc4f2ee5dc52eec3faab97de4ac900bb`) with PyYAML; verify both services, port 8787, schema v2 and cache value.
@@ -45,7 +46,8 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Preserve native backups and historical Docker volumes. Do not install both instances against the same live Hermes data.
 - [ ] Validate code-volume refresh on an Agent image change; do not reuse old source under a new tag.
 - [ ] Validate native backup/restore, including hard-link behavior and backup archive permissions.
-- [ ] Assess and mitigate **upstream Runtipi v4.12.0 permissions**: it recursively sets regular app-data files and directories to mode `0777` during lifecycle operations. Do not apply blind recursive chmod; inspect parent traversal and service identities first. See the migration guide.
+- [x] Identify the upstream Runtipi v4.12.0 permission-widening mechanism and perform local parent-path review (host-specific findings remain private).
+- [ ] Design a durable access-control mitigation separately, without recursive chmod/chown or disruption of other Runtipi apps. See the migration guide.
 - [ ] Only after review: set `available: true` and publish a `tipi_version` increment.
 
 See [Hermes migration and rollback plan](docs/HERMES_MIGRATION.md) before any production action.
