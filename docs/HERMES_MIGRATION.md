@@ -10,6 +10,10 @@
 - WebUI is the Runtipi main service, internal port `8787`, on `tipi_main_network`.
 - Agent and WebUI share a Runtipi private application network; Agent additionally reaches the external `hermes-searxng` network on the current VPS.
 - Agent API has no published host port.
+- Verified running container settings: `HERMES_UID=1000`, `HERMES_GID=1000`, `WANTED_UID=1000`, `WANTED_GID=1000`.
+- Gateway API key matches between containers (**values not disclosed**).
+- WebUI password is configured (**value not disclosed**).
+- WebUI `HERMES_WEBUI_AGENT_CACHE_MAX=4`; candidate manifest includes a configurable default of `4`.
 - Current persistent mounts:
   - `/opt/runtipi/app-data/_user/hermes-suite/hermes-home` -> Agent `/home/hermes/.hermes`, WebUI `/home/hermeswebui/.hermes`
   - `/opt/runtipi/app-data/_user/hermes-suite/opt-data` -> Agent `/opt/data`
@@ -32,8 +36,8 @@ A custom App Store entry and `tipi_version` do not automatically update existing
 
 ## Validation gates before any VPS changes
 
-1. Compare the real generated Compose **with the active user override**, only showing non-secret structure. In particular verify `HERMES_UID`, `HERMES_GID`, `WANTED_UID`, `WANTED_GID`, file ownership, WebUI authentication, command, healthcheck, `HERMES_WEBUI_AGENT_CACHE_MAX`, and all volumes.
-2. Verify the gateway API key is identical in the current agent and WebUI. Preserve the existing secret during migration, rather than silently generating a replacement or exposing it in logs.
+1. Compare the real generated Compose **with the active user override**, only showing non-secret structure. UID/GID, WebUI password presence, gateway-key matching, and WebUI agent-cache limit have been verified; **still verify file ownership, command, healthcheck, full network topology, and all volumes**.
+2. **Verified:** the gateway API key is identical in the current agent and WebUI. Preserve the existing secret during migration, rather than silently generating a replacement or exposing it in logs.
 3. Decide how to reproduce the **VPS-specific** `hermes-searxng` external network in the target app's Runtipi `user-config`. It is intentionally absent from the portable catalog Compose.
 4. Review the Runtipi-managed domain, local domain, Traefik routing, authentication and restart policies. Avoid binding the same domain to both app identities.
 5. Validate the store's `config.json`, Compose `x-runtipi.schema_version: 2`, and required form fields. No sensitive `app.env` or production domain goes into Git.
