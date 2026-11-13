@@ -1,5 +1,8 @@
 # DRAFT ONLY. Not for deployment until verified against the live Runtipi stack.
 # Existing _user installation and its user-config/app.env stay untouched.
+# Optional external integrations (e.g. hermes-searxng on one VPS) belong in a
+# per-installation Runtipi user-config override; do not hardcode that network
+# in this reusable app-store manifest.
 services:
   hermes-agent:
     image: nousresearch/hermes-agent:v0.23.1
@@ -7,8 +10,8 @@ services:
     environment:
       - TZ=${TZ}
       - HERMES_HOME=/home/hermes/.hermes
-      - HERMES_UID=1000
-      - HERMES_GID=1000
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/workspace
       - API_SERVER_ENABLED=true
       - API_SERVER_HOST=0.0.0.0
@@ -34,8 +37,8 @@ services:
       - HERMES_WEBUI_GATEWAY_API_KEY=${API_SERVER_KEY}
       - HERMES_WEBUI_PASSWORD=${HERMES_WEBUI_PASSWORD}
       - HERMES_WRITE_SAFE_ROOT=/workspace
-      - WANTED_UID=1000
-      - WANTED_GID=1000
+      - WANTED_UID=${HERMES_UID:-1000}
+      - WANTED_GID=${HERMES_GID:-1000}
     volumes:
       - ${APP_DATA_DIR}/hermes-home:/home/hermeswebui/.hermes
       - hermes-agent-src-v0231:/home/hermeswebui/.hermes/hermes-agent:ro
