@@ -59,6 +59,31 @@ jobs:
           fi
           python3 scripts/prepare_hermes_update.py \
             --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" --evidence "$EVIDENCE_URL"
+      - name: Valider l'existence de la revue de compatibilité
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue_api=$(python3 - <<'PY'
+          import os
+          import re
+          match = re.fullmatch(
+              r"https://github\.com/([\w.-]+)/([\w.-]+)/(?:issues|pull)/([1-9]\d*)",
+              os.environ["EVIDENCE_URL"],
+              re.ASCII,
+          )
+          if not match:
+              raise SystemExit("Invalid GitHub review URL")
+          owner, repo, number = match.groups()
+          print(f"repos/{owner}/{repo}/issues/{number}")
+          PY
+          )
+          gh api "$issue_api" | python3 -c '
+          import json, sys
+          item = json.load(sys.stdin)
+          body = item.get("body") or ""
+          if not body.strip() or "<!-- hermes-update-watch:v1 -->" in body:
+              sys.exit("A release alert or empty issue is not compatibility evidence")
+          '
       - name: Vérifier les releases GitHub publiées
         shell: bash
         run: |
@@ -79,6 +104,15 @@ jobs:
             --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" --evidence "$EVIDENCE_URL" \
             --apply --body-file "$RUNNER_TEMP/hermes-update-pr.md"
           git diff --check
+          actual="$(git diff --name-only | LC_ALL=C sort)"
+          expected="$(printf '%s\n' \
+            apps/hermes-suite/config.json \
+            apps/hermes-suite/docker-compose.yml \
+            apps/hermes-suite/metadata/description.md | LC_ALL=C sort)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "Unexpected changed files; aborting. Found: $actual" >&2
+            exit 1
+          fi
           python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
       - name: Créer une branche et une PR en brouillon
         shell: bash
