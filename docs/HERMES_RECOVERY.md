@@ -14,7 +14,7 @@
 
 - Les répertoires globaux `user-config`, `user-config/_user` et `user-config/migrated` sont passés de `0777` à `0755` ; l'espace privé `user-config/pro-runtipi` reste en `0700`.
 - Le répertoire parent `app-data/pro-runtipi` est passé de `0755` à `0700`, avec uniquement Hermes Suite à l'intérieur. Les fichiers secrets contrôlés sont en `0600`.
-- Runtipi fonctionne en UID 0 et possède les montages nécessaires. Les conteneurs étaient toujours actifs après les modifications ; un test fonctionnel complet dans le navigateur reste à confirmer.
+- Runtipi fonctionne en UID 0 et possède les montages nécessaires. Les conteneurs étaient toujours actifs après les modifications et l'utilisateur a confirmé le bon fonctionnement de Hermes dans son navigateur le 21 novembre 2026. Cela ne remplace pas un test de restauration.
 - **Limite :** Runtipi 4.12.0 applique encore récursivement `chmod(mode | 0o777)` dans le répertoire d'application lors de certaines actions. Le parent `0700` bloque la traversée depuis les comptes locaux ordinaires sur l'hôte, mais ne supprime pas ce comportement, ni les accès root ou les accès Docker déjà montés.
 - Recontrôler les modes après un redémarrage ou une mise à jour Runtipi. Ne pas lancer un `chmod -R` sur l'ensemble de Runtipi.
 
