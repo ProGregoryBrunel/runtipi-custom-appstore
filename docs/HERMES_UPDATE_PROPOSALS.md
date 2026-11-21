@@ -7,8 +7,8 @@ La veille existante continue à détecter les releases dans l'issue GitHub. La c
 
 1. Ouvrir **Actions > Proposer mise à jour Hermes (brouillon) > Run workflow**, branche `main`.
 2. Saisir `agent_version` **avec `v`** (par exemple `v0.23.4`) et `webui_version` **sans `v`** (par exemple `0.52.703`). Ces versions sont des exemples et ne sont pas des recommandations de déploiement.
-3. Indiquer un lien vers **une issue/PR GitHub documentant l'examen de compatibilité**, cocher la confirmation manuelle, puis lancer. Une simple alerte de nouvelle release ne vaut pas revue de compatibilité.
-4. Le workflow exécute les tests, refuse versions expérimentales/downgrades/couples bloqués, vérifie que les releases officielles existent et inspecte les manifests d'images Docker **sans les télécharger sur le VPS**.
+3. Indiquer un lien vers **une issue/PR GitHub existante documentant l'examen de compatibilité**, avec un contenu non vide, cocher la confirmation manuelle, puis lancer. L'issue de veille automatisée (comme l'issue #7) est explicitement refusée comme justificatif.
+4. Le workflow exécute les tests, refuse versions expérimentales/downgrades/couples bloqués, vérifie l'existence de la revue GitHub, les releases officielles et les manifests d'images Docker **sans les télécharger sur le VPS**. Il refuse également tout changement de fichier extérieur aux trois fichiers du catalogue Hermes attendus.
 5. Si tout passe, le workflow crée une branche dédiée et une **PR en brouillon**. Il ne modifie que le `config.json`, le Compose et la description d'Hermes Suite. Il ne fusionne et ne déploie rien.
 
 **Attention :** la paire `v0.23.3` / `0.52.702` est explicitement bloquée à ce stade en raison d'un problème de compatibilité signalé. Modifier ce blocage nécessite une nouvelle revue justifiée.
