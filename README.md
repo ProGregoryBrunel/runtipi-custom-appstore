@@ -4,7 +4,7 @@ Personal, multi-application Runtipi catalog maintained under the GitHub account 
 
 ## Status
 
-**Listed in the custom App Store; production migration still pending.** Hermes Suite is `available: true`, but listing it is not authorization to install it over an existing local Hermes deployment. Normal Runtipi UI installation starts the app, and old/new application identities have separate data paths and routing. A separate controlled migration is required.
+**Production running under the `pro-runtipi` custom store (verified 21 November 2026).** Hermes Suite remains pinned to Agent `v0.23.1` and WebUI `0.52.677`. The original `_user` installation remains historical, not the active store identity. The migration happened before this documentation update; read the archived plan below as history, not as instructions to repeat it. The native restore path has **not** been tested.
 
 ## Structure
 
@@ -29,9 +29,9 @@ Initial target:
 - WebUI main internal port: `8787`
 - Runtipi: `v4.12.0`
 
-The existing production app is **`hermes-suite:_user`**, not the future store app. Merely adding this store will **not** migrate that app or its backups.
+The active production app is **`hermes-suite:pro-runtipi`**. The legacy `hermes-suite:_user` application and its backups are historical and must remain preserved until the recovery process is validated.
 
-### Release checklist
+### Archived migration checklist (original pre-migration checkpoints)
 
 - [ ] Compare the full non-secret structure of current Runtipi-generated Compose, user override, and new Compose.
 - [x] Confirm running UID/GID values are 1000 for both services; gateway keys match and WebUI password is configured (no values published).
@@ -55,7 +55,7 @@ The existing production app is **`hermes-suite:_user`**, not the future store ap
 - [ ] Before migration, confirm the target root-protected `user-config` files are syntactically valid and readable by the Runtipi backend without printing secrets. The Compose override must attach the Agent to the existing SearXNG network.
 - [ ] During initial install, avoid publishing the old host port or claiming its existing domain until routing ownership is intentionally switched.
 
-See [Hermes migration and rollback plan](docs/HERMES_MIGRATION.md) before any production action.
+See the [archived Hermes migration plan](docs/HERMES_MIGRATION.md) for historical context and the [current recovery status](docs/HERMES_RECOVERY.md) before any production action. The unchecked pre-migration checkpoints above do not imply that the deployment is still pending.
 
 No API keys, passwords, `.env` files, personal data, production domains, or server secrets belong in this repository.
 
