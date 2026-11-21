@@ -23,6 +23,8 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      - name: Tests unitaires hors réseau
+        run: python3 -m unittest discover -s tests -p 'test_watch_hermes_updates.py' -v
       - name: Vérifier les releases stables et notifier via GitHub Issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
