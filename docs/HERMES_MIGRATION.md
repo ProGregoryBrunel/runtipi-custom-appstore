@@ -1,6 +1,6 @@
 # Hermes Suite: migration from local Runtipi custom app
 
-**Status: design only. Not approved for production.** Runtipi 4.12.0 and the two Docker images were identified from the running VPS. No installation, migration, restore or update has been performed using the app-store definition.
+**Historical migration plan (written before the cutover).** The deployment has since been migrated and verified running as `hermes-suite:pro-runtipi` on 21 November 2026. The original `hermes-suite:_user` baseline and proposed migration steps below are retained for historical reference only. **Do not run a second cutover based on this document.** Native backup restoration and source-volume reconstruction remain untested; see [current recovery status](HERMES_RECOVERY.md).
 
 ## Verified baseline (13 November 2026)
 
