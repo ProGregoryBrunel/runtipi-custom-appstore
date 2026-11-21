@@ -99,6 +99,20 @@ class GeneratorTests(unittest.TestCase):
             with self.assertRaisesRegex(prep.UpdateError, "volume"):
                 prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
 
+    def test_volume_cannot_be_satisfied_by_comment(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = fixture(root)
+            path = folder / "docker-compose.yml"
+            # An old substring-based check could mistake a comment for a mount.
+            source = path.read_text().replace(
+                "      - hermes-agent-src-v0231:/opt/hermes\n",
+                "      # - hermes-agent-src-v0231:/opt/hermes\n",
+            )
+            path.write_text(source)
+            with self.assertRaisesRegex(prep.UpdateError, "volume"):
+                prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
+
     def test_inconsistent_config_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
