@@ -1,0 +1,134 @@
+name: Proposer mise à jour Hermes (brouillon)
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_version:
+        description: 'Version Agent (ex: v0.23.4, sans prerelease)'
+        required: true
+        type: string
+      webui_version:
+        description: 'Version WebUI (ex: 0.52.703, sans v)'
+        required: true
+        type: string
+      compatibility_evidence:
+        description: 'Lien vers une issue ou PR GitHub documentant la revue de compatibilité'
+        required: true
+        type: string
+      compatibility_reviewed:
+        description: 'Confirmer la revue humaine du couple Agent/WebUI'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: propose-hermes-update
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    if: github.ref == 'refs/heads/main' && github.actor == 'ProGregoryBrunel'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      AGENT_VERSION: ${{ inputs.agent_version }}
+      WEBUI_VERSION: ${{ inputs.webui_version }}
+      EVIDENCE_URL: ${{ inputs.compatibility_evidence }}
+      REVIEWED: ${{ inputs.compatibility_reviewed }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Lire le catalogue
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (Node.js 24)
+        with:
+          ref: main
+      - name: Tests Python hors réseau
+        run: python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
+      - name: Refuser les couples non validés et vérifier le patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$REVIEWED" != 'true' ]]; then
+            echo 'Revue de compatibilité non confirmée : arrêt.' >&2
+            exit 1
+          fi
+          python3 scripts/prepare_hermes_update.py \
+            --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" --evidence "$EVIDENCE_URL"
+      - name: Valider l'existence de la revue de compatibilité
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue_api=$(python3 - <<'PY'
+          import os
+          import re
+          match = re.fullmatch(
+              r"https://github\.com/([\w.-]+)/([\w.-]+)/(?:issues|pull)/([1-9]\d*)",
+              os.environ["EVIDENCE_URL"],
+              re.ASCII,
+          )
+          if not match:
+              raise SystemExit("Invalid GitHub review URL")
+          owner, repo, number = match.groups()
+          print(f"repos/{owner}/{repo}/issues/{number}")
+          PY
+          )
+          gh api "$issue_api" | python3 -c '
+          import json, sys
+          item = json.load(sys.stdin)
+          body = item.get("body") or ""
+          if not body.strip() or "<!-- hermes-update-watch:v1 -->" in body:
+              sys.exit("A release alert or empty issue is not compatibility evidence")
+          '
+      - name: Vérifier les releases GitHub publiées
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/NousResearch/hermes-agent/releases/tags/$AGENT_VERSION" --jq '(.draft | not) and (.prerelease | not)')" = true
+          test "$(gh api "repos/nesquena/hermes-webui/releases/tags/v$WEBUI_VERSION" --jq '(.draft | not) and (.prerelease | not)')" = true
+      - name: Vérifier les manifests d'images sans pull
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "nousresearch/hermes-agent:$AGENT_VERSION" > /dev/null
+          docker buildx imagetools inspect "ghcr.io/nesquena/hermes-webui:$WEBUI_VERSION" > /dev/null
+      - name: Construire la proposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_hermes_update.py \
+            --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" --evidence "$EVIDENCE_URL" \
+            --apply --body-file "$RUNNER_TEMP/hermes-update-pr.md"
+          git diff --check
+          actual="$(git diff --name-only | LC_ALL=C sort)"
+          expected="$(printf '%s\n' \
+            apps/hermes-suite/config.json \
+            apps/hermes-suite/docker-compose.yml \
+            apps/hermes-suite/metadata/description.md | LC_ALL=C sort)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "Unexpected changed files; aborting. Found: $actual" >&2
+            exit 1
+          fi
+          python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
+      - name: Créer une branche et une PR en brouillon
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="hermes/update-agent-${AGENT_VERSION}-webui-${WEBUI_VERSION}"
+          if git ls-remote --exit-code --heads origin "refs/heads/$branch" > /dev/null; then
+            echo "Branche déjà existante : $branch. Aucun écrasement." >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add -- apps/hermes-suite/config.json apps/hermes-suite/docker-compose.yml apps/hermes-suite/metadata/description.md
+          git commit -m "chore(hermes): propose Agent $AGENT_VERSION and WebUI $WEBUI_VERSION"
+          git push -u origin "$branch"
+          gh pr create --draft --base main --head "$branch" \
+            --title "chore(hermes): propose $AGENT_VERSION + $WEBUI_VERSION (review required)" \
+            --body-file "$RUNNER_TEMP/hermes-update-pr.md"
