@@ -81,12 +81,16 @@ def build_update(root: Path, agent: str, webui: str, evidence: str) -> tuple[dic
 
     old_volume = "hermes-agent-src-v" + current["agent"][1:].replace(".", "")
     new_volume = "hermes-agent-src-v" + agent[1:].replace(".", "")
-    expected = (
-        f"- {old_volume}:/opt/hermes",
-        f"- {old_volume}:/home/hermeswebui/.hermes/hermes-agent:ro",
-        f"  {old_volume}:",
+    # Require whole Compose lines, not substrings hidden in comments or other mounts.
+    volume = re.escape(old_volume)
+    expected_lines = (
+        rf"^[ \t]*-[ \t]+{volume}:/opt/hermes[ \t]*$",
+        rf"^[ \t]*-[ \t]+{volume}:/home/hermeswebui/\.hermes/hermes-agent:ro[ \t]*$",
+        rf"^[ \t]+{volume}:[ \t]*$",
     )
-    if compose.count(old_volume) != 3 or not all(fragment in compose for fragment in expected):
+    if compose.count(old_volume) != 3 or any(
+        len(re.findall(pattern, compose, re.MULTILINE)) != 1 for pattern in expected_lines
+    ):
         raise UpdateError("Code volume does not match expected 2 mounts + declaration")
 
     compose = single_replace(IMAGES["agent"], compose, current["agent"], agent, "agent")
