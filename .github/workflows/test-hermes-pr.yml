@@ -7,10 +7,20 @@ on:
       - 'scripts/watch_hermes_updates.py'
       - 'tests/test_*hermes*.py'
       - '.github/workflows/test-hermes-pr.yml'
+      - '.github/workflows/auto-hermes-catalog.yml'
+      - 'scripts/auto_hermes_catalog.py'
+      - 'scripts/hermes_pair_runtime_probe.py'
+      - 'scripts/smoke_hermes_pair.sh'
+      - 'apps/hermes-suite/docker-compose.yml'
+      - 'apps/hermes-suite/config.json'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: hermes-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   hermes:
@@ -23,6 +33,35 @@ jobs:
         with:
           persist-credentials: false
       - name: Vérifier la syntaxe Python
-        run: python3 -m compileall -q scripts/prepare_hermes_update.py scripts/watch_hermes_updates.py tests/test_prepare_hermes_update.py tests/test_watch_hermes_updates.py
+        run: python3 -m compileall -q scripts/prepare_hermes_update.py scripts/watch_hermes_updates.py scripts/auto_hermes_catalog.py scripts/hermes_pair_runtime_probe.py tests/
       - name: Tester la préparation et la veille des versions
         run: python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
+
+  baseline-integration:
+    name: Agent/WebUI Docker smoke (pinned baseline)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      HERMES_SMOKE_BASELINE: '1'
+    steps:
+      - name: Récupérer le catalogue sans identifiants
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Lire les versions réellement épinglées
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from watch_hermes_updates import read_pins
+          versions = read_pins(Path('.'))
+          with open(__import__('os').environ['GITHUB_ENV'], 'a', encoding='utf-8') as f:
+              print('AGENT_VERSION=' + versions['Agent'], file=f)
+              print('WEBUI_VERSION=' + versions['WebUI'], file=f)
+          PY
+      - name: Tester les vraies images épinglées et la suppression de session
+        run: bash scripts/smoke_hermes_pair.sh

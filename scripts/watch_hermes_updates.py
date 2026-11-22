@@ -86,8 +86,8 @@ def read_pins(root: Path) -> dict[str, str]:
     config = json.loads((root / "apps/hermes-suite/config.json").read_text(encoding="utf-8"))
     compose = (root / "apps/hermes-suite/docker-compose.yml").read_text(encoding="utf-8")
     patterns = {
-        "Agent": r"^\s*image:\s*nousresearch/hermes-agent:(v?\d+\.\d+\.\d+)\s*$",
-        "WebUI": r"^\s*image:\s*ghcr\.io/nesquena/hermes-webui:(v?\d+\.\d+\.\d+)\s*$",
+        "Agent": r"^\s*image:\s*nousresearch/hermes-agent:(v?\d+\.\d+\.\d+)(?:@sha256:[0-9a-f]{64})?\s*$",
+        "WebUI": r"^\s*image:\s*ghcr\.io/nesquena/hermes-webui:(v?\d+\.\d+\.\d+)(?:@sha256:[0-9a-f]{64})?\s*$",
     }
     pins = {}
     for name, pattern in patterns.items():

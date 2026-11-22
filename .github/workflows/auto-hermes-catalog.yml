@@ -1,0 +1,141 @@
+name: Publication automatique Hermes après compatibilité
+
+on:
+  schedule:
+    - cron: '43 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hermes-catalog-publish
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    if: github.repository == 'ProGregoryBrunel/runtipi-custom-appstore' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      eligible: ${{ steps.select.outputs.eligible }}
+      agent: ${{ steps.select.outputs.agent }}
+      webui: ${{ steps.select.outputs.webui }}
+    steps:
+      - name: Checkout approved catalog
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Offline unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
+      - name: Select compatible candidates (static gate)
+        id: select
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/auto_hermes_catalog.py --github-output "$GITHUB_OUTPUT"
+
+  integration:
+    needs: discover
+    if: needs.discover.outputs.eligible == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      agent_digest: ${{ steps.digest.outputs.agent_digest }}
+      webui_digest: ${{ steps.digest.outputs.webui_digest }}
+    env:
+      AGENT_VERSION: ${{ needs.discover.outputs.agent }}
+      WEBUI_VERSION: ${{ needs.discover.outputs.webui }}
+    steps:
+      - name: Checkout catalog without credentials
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Verify released image manifests
+        id: digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in agent webui; do
+            if [[ "$name" == agent ]]; then
+              image="nousresearch/hermes-agent:$AGENT_VERSION"
+            else
+              image="ghcr.io/nesquena/hermes-webui:$WEBUI_VERSION"
+            fi
+            info="$(docker buildx imagetools inspect "$image")"
+            digest="$(printf '%s\n' "$info" | awk '/^Digest:/ {print $2; exit}')"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 1
+            printf '%s_digest=%s\n' "$name" "$digest" >> "$GITHUB_OUTPUT"
+          done
+      - name: Test real Agent and WebUI containers and gateway session deletion
+        shell: bash
+        env:
+          AGENT_DIGEST: ${{ steps.digest.outputs.agent_digest }}
+          WEBUI_DIGEST: ${{ steps.digest.outputs.webui_digest }}
+        run: bash scripts/smoke_hermes_pair.sh
+      - name: Ensure image tags did not change during the smoke test
+        shell: bash
+        env:
+          TESTED_AGENT_DIGEST: ${{ steps.digest.outputs.agent_digest }}
+          TESTED_WEBUI_DIGEST: ${{ steps.digest.outputs.webui_digest }}
+        run: |
+          set -euo pipefail
+          agent="$(docker buildx imagetools inspect "nousresearch/hermes-agent:$AGENT_VERSION" | awk '/^Digest:/ {print $2; exit}')"
+          webui="$(docker buildx imagetools inspect "ghcr.io/nesquena/hermes-webui:$WEBUI_VERSION" | awk '/^Digest:/ {print $2; exit}')"
+          [[ "$agent" == "$TESTED_AGENT_DIGEST" && "$webui" == "$TESTED_WEBUI_DIGEST" ]]
+
+  publish:
+    needs: [discover, integration]
+    if: needs.discover.outputs.eligible == 'true' && needs.integration.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    env:
+      AGENT_VERSION: ${{ needs.discover.outputs.agent }}
+      WEBUI_VERSION: ${{ needs.discover.outputs.webui }}
+      TESTED_AGENT_DIGEST: ${{ needs.integration.outputs.agent_digest }}
+      TESTED_WEBUI_DIGEST: ${{ needs.integration.outputs.webui_digest }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout trusted main with write permission
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Recheck catalog and upstream stable releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/auto_hermes_catalog.py --recheck \
+            --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION"
+      - name: Verify the tested digests remain published
+        shell: bash
+        run: |
+          set -euo pipefail
+          agent="$(docker buildx imagetools inspect "nousresearch/hermes-agent:$AGENT_VERSION" | awk '/^Digest:/ {print $2; exit}')"
+          webui="$(docker buildx imagetools inspect "ghcr.io/nesquena/hermes-webui:$WEBUI_VERSION" | awk '/^Digest:/ {print $2; exit}')"
+          [[ "$agent" == "$TESTED_AGENT_DIGEST" && "$webui" == "$TESTED_WEBUI_DIGEST" ]]
+      - name: Prepare the precisely tested catalog version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_hermes_update.py \
+            --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" \
+            --evidence "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --agent-digest "$TESTED_AGENT_DIGEST" --webui-digest "$TESTED_WEBUI_DIGEST" \
+            --apply
+          git diff --check
+          actual="$(git diff --name-only | LC_ALL=C sort)"
+          expected="$(printf '%s\n' apps/hermes-suite/config.json apps/hermes-suite/docker-compose.yml apps/hermes-suite/metadata/description.md | LC_ALL=C sort)"
+          [[ "$actual" == "$expected" ]] || { echo 'Unexpected modified files' >&2; exit 1; }
+          python3 -m unittest discover -s tests -p 'test_*hermes*.py' -q
+      - name: Publish catalog only, without any Runtipi installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- apps/hermes-suite/config.json apps/hermes-suite/docker-compose.yml apps/hermes-suite/metadata/description.md
+          git commit -m "chore(hermes): publish validated $AGENT_VERSION + $WEBUI_VERSION"
+          # No force push. Any concurrent update or branch protection refuses the write.
+          git push origin HEAD:main

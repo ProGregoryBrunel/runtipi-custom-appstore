@@ -54,6 +54,38 @@ class GeneratorTests(unittest.TestCase):
             self.assertIn("Fusion humaine", body)
             self.assertIn("v0.23.1", (folder / "docker-compose.yml").read_text())
 
+    def test_digest_pins_replace_and_are_readable(self):
+        digest_a, digest_b = "sha256:" + "a"*64, "sha256:" + "b"*64
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = fixture(root)
+            changes, _ = prep.build_update(
+                root, "v0.23.3", "0.52.725", EVIDENCE,
+                agent_digest=digest_a, webui_digest=digest_b,
+            )
+            text = changes[folder / "docker-compose.yml"]
+            self.assertIn("hermes-agent:v0.23.3@" + digest_a, text)
+            self.assertIn("hermes-webui:0.52.725@" + digest_b, text)
+            for path, value in changes.items():
+                path.write_text(value, encoding="utf-8")
+            import sys
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+            import watch_hermes_updates as watch
+            self.assertEqual(watch.read_pins(root), {"Agent": "v0.23.3", "WebUI": "0.52.725"})
+
+    def test_invalid_or_partial_digests_rejected(self):
+        digest = "sha256:" + "a"*64
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            for a, b in ((digest, None), (digest, "sha256:bad"), (None, digest)):
+                with self.subTest(a=a, b=b), self.assertRaises(prep.UpdateError):
+                    prep.build_update(root, "v0.23.3", "0.52.725", EVIDENCE, a, b)
+
+    def test_actions_run_is_valid_evidence(self):
+        url = "https://github.com/ProGregoryBrunel/runtipi-custom-appstore/actions/runs/123"
+        self.assertIsNotNone(prep.EVIDENCE.fullmatch(url))
+
     def test_webui_only_keeps_agent_volume(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
