@@ -68,6 +68,9 @@ jobs:
           done
       - name: Test real Agent and WebUI containers and gateway session deletion
         shell: bash
+        env:
+          AGENT_DIGEST: ${{ steps.digest.outputs.agent_digest }}
+          WEBUI_DIGEST: ${{ steps.digest.outputs.webui_digest }}
         run: bash scripts/smoke_hermes_pair.sh
       - name: Ensure image tags did not change during the smoke test
         shell: bash
@@ -119,6 +122,7 @@ jobs:
           python3 scripts/prepare_hermes_update.py \
             --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" \
             --evidence "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --agent-digest "$TESTED_AGENT_DIGEST" --webui-digest "$TESTED_WEBUI_DIGEST" \
             --apply
           git diff --check
           actual="$(git diff --name-only | LC_ALL=C sort)"
