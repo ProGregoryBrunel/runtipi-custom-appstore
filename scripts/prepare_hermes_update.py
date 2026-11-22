@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = Path("apps/hermes-suite")
 AGENT = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 WEBUI = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
-EVIDENCE = re.compile(r"^https://github\.com/[\w.-]+/[\w.-]+/(?:issues|pull)/[1-9]\d*$", re.ASCII)
+EVIDENCE = re.compile(r"^https://github\.com/[\w.-]+/[\w.-]+/(?:(?:issues|pull)/[1-9]\d*|actions/runs/[1-9]\d*)$", re.ASCII)
 IMAGES = {
     "agent": re.compile(r"(?m)^(\s*image:\s*nousresearch/hermes-agent:)(v\d+\.\d+\.\d+)(\s*)$"),
     "webui": re.compile(r"(?m)^(\s*image:\s*ghcr\.io/nesquena/hermes-webui:)(\d+\.\d+\.\d+)(\s*)$"),
