@@ -40,13 +40,24 @@ jobs:
     permissions:
       contents: read
     env:
-      AGENT_VERSION: v0.23.1
-      WEBUI_VERSION: 0.52.677
       HERMES_SMOKE_BASELINE: '1'
     steps:
       - name: Récupérer le catalogue sans identifiants
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - name: Lire les versions réellement épinglées
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from watch_hermes_updates import read_pins
+          versions = read_pins(Path('.'))
+          with open(__import__('os').environ['GITHUB_ENV'], 'a', encoding='utf-8') as f:
+              print('AGENT_VERSION=' + versions['Agent'], file=f)
+              print('WEBUI_VERSION=' + versions['WebUI'], file=f)
+          PY
       - name: Tester les vraies images épinglées et la suppression de session
         run: bash scripts/smoke_hermes_pair.sh
