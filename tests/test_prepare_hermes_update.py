@@ -40,7 +40,7 @@ class GeneratorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             folder = fixture(root)
-            changes, body = prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
+            changes, body = prep.build_update(root, "v0.23.4", "0.52.725", EVIDENCE)
             self.assertEqual(len(changes), 3)
             new_cfg = json.loads(changes[folder / "config.json"])
             self.assertEqual(new_cfg["tipi_version"], 2)
@@ -62,12 +62,34 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(changes[folder / "docker-compose.yml"].count("hermes-agent-src-v0231"), 3)
             self.assertEqual(json.loads(changes[folder / "config.json"])["tipi_version"], 2)
 
+    def test_newer_webui_version_can_reach_structural_review(self):
+        # Synthetic future version, not evidence of a published or compatible release.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            changes, _ = prep.build_update(root, "v0.23.3", "0.52.725", EVIDENCE)
+            self.assertEqual(len(changes), 3)
+
     def test_block_known_bad_pair(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             fixture(root)
             with self.assertRaisesRegex(prep.UpdateError, "blocked"):
                 prep.build_update(root, "v0.23.3", "0.52.702", EVIDENCE)
+
+    def test_block_session_deletion_regression_through_stable_webui_052724(self):
+        # WebUI stable 0.52.724 still lacks fix #9218 for Agent v0.23.3+.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            for agent, webui in (
+                ("v0.23.3", "0.52.724"),
+                ("v0.23.4", "0.52.724"),
+                ("v0.23.3", "0.52.677"),
+            ):
+                with self.subTest(agent=agent, webui=webui):
+                    with self.assertRaisesRegex(prep.UpdateError, "session deletion regression"):
+                        prep.build_update(root, agent, webui, EVIDENCE)
 
     def test_reject_no_update_and_downgrade(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -97,7 +119,7 @@ class GeneratorTests(unittest.TestCase):
             compose_path = folder / "docker-compose.yml"
             compose_path.write_text(compose_path.read_text().replace("hermes-agent-src-v0231:/opt/hermes", "wrong:/opt/hermes"))
             with self.assertRaisesRegex(prep.UpdateError, "volume"):
-                prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
+                prep.build_update(root, "v0.23.4", "0.52.725", EVIDENCE)
 
     def test_volume_cannot_be_satisfied_by_comment(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -111,7 +133,7 @@ class GeneratorTests(unittest.TestCase):
             )
             path.write_text(source)
             with self.assertRaisesRegex(prep.UpdateError, "volume"):
-                prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
+                prep.build_update(root, "v0.23.4", "0.52.725", EVIDENCE)
 
     def test_inconsistent_config_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -122,7 +144,7 @@ class GeneratorTests(unittest.TestCase):
             cfg["version"] = "0.24.0"
             path.write_text(json.dumps(cfg))
             with self.assertRaisesRegex(prep.UpdateError, "mismatch"):
-                prep.build_update(root, "v0.23.4", "0.52.703", EVIDENCE)
+                prep.build_update(root, "v0.23.4", "0.52.725", EVIDENCE)
 
     def test_tag_and_url_regex(self):
         self.assertEqual(prep.numbers("v0.23.4", "agent"), (0,23,4))

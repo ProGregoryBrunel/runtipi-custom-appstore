@@ -63,6 +63,12 @@ No API keys, passwords, `.env` files, personal data, production domains, or serv
 
 Runtipi uses catalog `tipi_version` changes to identify available application updates; it does **not** automatically watch Docker Hub or GHCR for new upstream image tags. Review compatible Agent/WebUI versions before increasing `tipi_version`.
 
+The `watch-hermes.yml` workflow checks stable GitHub releases every six hours and maintains [issue #7](https://github.com/ProGregoryBrunel/runtipi-custom-appstore/issues/7) as an alert. It neither changes the catalog nor deploys anything. After a **human compatibility review**, the repository owner can manually run `propose-hermes-update.yml` with the pinned Agent/WebUI tags, a separate issue/PR documenting compatibility, and the explicit review checkbox. The workflow checks release tags and image manifests and creates a **draft PR**; it never merges automatically.
+
+Only after that PR is reviewed and **manually merged** does an incremented `tipi_version` become available to Runtipi. In the Runtipi UI, use **Settings > Update App Stores** if necessary, then inspect the Hermes Suite update diff before choosing to install. Runtipi updates are manual; do not invoke a CLI update or change production services without a current backup, compatibility evidence and an approved rollback plan. For an Agent upgrade, the versioned source-code volume changes in both mounts and its declaration; the previous volume must be preserved.
+
+**Compatibility hold (22 November 2026):** upstream Agent `v0.23.3` with WebUI stable `0.52.724` has a [known session deletion failure](https://github.com/nesquena/hermes-webui/issues/9213). The [WebUI fix #9218](https://github.com/nesquena/hermes-webui/pull/9218) has merged but is not included in the `0.52.724` stable release notes. The update generator rejects confirmed affected combinations pending a newer stable release and a separate review; it does not automatically approve future versions. Production remains pinned at Agent `v0.23.1` + WebUI `0.52.677` (`tipi_version: 1`).
+
 ## Sources
 
 - [Runtipi](https://github.com/runtipi/runtipi)

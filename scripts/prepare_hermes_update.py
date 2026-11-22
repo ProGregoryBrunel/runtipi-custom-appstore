@@ -21,6 +21,12 @@ IMAGES = {
 # Release pair currently held due to reported session compatibility problems.
 # Do not remove without documented compatibility evidence and review.
 BLOCKED_PAIRS = {("v0.23.3", "0.52.702")}
+# WebUI <=0.52.724 imports an Agent-internal retirement API removed in v0.23.3.
+# See nesquena/hermes-webui#9213. Fix #9218 is not in stable v0.52.724.
+# This is a fail-closed floor for confirmed affected versions, not approval of
+# newer WebUI versions; the manual compatibility review remains mandatory.
+SESSION_DELETE_AGENT_MIN = (0, 23, 3)
+SESSION_DELETE_WEBUI_MAX = (0, 52, 724)
 
 
 class UpdateError(ValueError):
@@ -43,12 +49,18 @@ def single_replace(pattern: re.Pattern, content: str, old: str, new: str, label:
 
 
 def build_update(root: Path, agent: str, webui: str, evidence: str) -> tuple[dict[Path, str], str]:
-    numbers(agent, "agent")
-    numbers(webui, "webui")
+    agent_numbers = numbers(agent, "agent")
+    webui_numbers = numbers(webui, "webui")
     if not EVIDENCE.fullmatch(evidence):
         raise UpdateError("Compatibility evidence must be a GitHub issue or PR URL")
     if (agent, webui) in BLOCKED_PAIRS:
         raise UpdateError("This release pair is blocked following a compatibility report")
+    if agent_numbers >= SESSION_DELETE_AGENT_MIN and webui_numbers <= SESSION_DELETE_WEBUI_MAX:
+        raise UpdateError(
+            "Update blocked: Agent v0.23.3+ with WebUI <=0.52.724 has a known "
+            "session deletion regression (nesquena/hermes-webui#9213); review a "
+            "stable WebUI release including fix #9218 before proposing the pair"
+        )
 
     config_file = root / APP / "config.json"
     compose_file = root / APP / "docker-compose.yml"

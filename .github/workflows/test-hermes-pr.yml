@@ -1,0 +1,28 @@
+name: Tests PR Hermes
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/prepare_hermes_update.py'
+      - 'scripts/watch_hermes_updates.py'
+      - 'tests/test_*hermes*.py'
+      - '.github/workflows/test-hermes-pr.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hermes:
+    name: Tests unitaires Hermes (sans réseau applicatif)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe Python
+        run: python3 -m compileall -q scripts/prepare_hermes_update.py scripts/watch_hermes_updates.py tests/test_prepare_hermes_update.py tests/test_watch_hermes_updates.py
+      - name: Tester la préparation et la veille des versions
+        run: python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
