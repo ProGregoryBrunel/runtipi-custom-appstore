@@ -31,6 +31,19 @@ class WatchHermesTests(unittest.TestCase):
             )
             self.assertEqual(watch.read_pins(root), {"Agent": "v0.23.1", "WebUI": "0.52.677"})
 
+    def test_digest_pins(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / "apps/hermes-suite"
+            folder.mkdir(parents=True)
+            (folder / "config.json").write_text('{"version":"0.23.3","tipi_version":2}')
+            (folder / "docker-compose.yml").write_text(
+                "services:\\n  hermes-agent:\\n    image: nousresearch/hermes-agent:v0.23.3@sha256:"
+                + "a"*64 + "\\n  hermes-webui:\\n    image: ghcr.io/nesquena/hermes-webui:0.52.725@sha256:"
+                + "b"*64 + "\\n"
+            )
+            self.assertEqual(watch.read_pins(root), {"Agent": "v0.23.3", "WebUI": "0.52.725"})
+
     def test_latest_rejects_prerelease_and_experimental(self):
         fake = {
             "/repos/nesquena/hermes-webui/releases/latest": {

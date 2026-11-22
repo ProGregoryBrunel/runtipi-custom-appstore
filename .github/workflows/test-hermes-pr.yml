@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Vérifier la syntaxe Python
-        run: python3 -m compileall -q scripts/prepare_hermes_update.py scripts/watch_hermes_updates.py tests/test_prepare_hermes_update.py tests/test_watch_hermes_updates.py
+        run: python3 -m compileall -q scripts/prepare_hermes_update.py scripts/watch_hermes_updates.py scripts/auto_hermes_catalog.py scripts/hermes_pair_runtime_probe.py tests/
       - name: Tester la préparation et la veille des versions
         run: python3 -m unittest discover -s tests -p 'test_*hermes*.py' -v
 
