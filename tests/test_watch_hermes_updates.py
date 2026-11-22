@@ -38,9 +38,9 @@ class WatchHermesTests(unittest.TestCase):
             folder.mkdir(parents=True)
             (folder / "config.json").write_text('{"version":"0.23.3","tipi_version":2}')
             (folder / "docker-compose.yml").write_text(
-                "services:\\n  hermes-agent:\\n    image: nousresearch/hermes-agent:v0.23.3@sha256:"
-                + "a"*64 + "\\n  hermes-webui:\\n    image: ghcr.io/nesquena/hermes-webui:0.52.725@sha256:"
-                + "b"*64 + "\\n"
+                "services:\n  hermes-agent:\n    image: nousresearch/hermes-agent:v0.23.3@sha256:"
+                + "a"*64 + "\n  hermes-webui:\n    image: ghcr.io/nesquena/hermes-webui:0.52.725@sha256:"
+                + "b"*64 + "\n"
             )
             self.assertEqual(watch.read_pins(root), {"Agent": "v0.23.3", "WebUI": "0.52.725"})
 
