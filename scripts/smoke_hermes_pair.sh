@@ -47,8 +47,11 @@ pins = read_pins(__import__("pathlib").Path("."))
 assert (pins["Agent"], pins["WebUI"]) == tuple(sys.argv[1:]), "Baseline tags differ"
 PY
 else
+  : "${AGENT_DIGEST:?Immutable Agent image digest required}"
+  : "${WEBUI_DIGEST:?Immutable WebUI image digest required}"
   python3 scripts/prepare_hermes_update.py \
     --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" \
+    --agent-digest "$AGENT_DIGEST" --webui-digest "$WEBUI_DIGEST" \
     --evidence "https://github.com/ProGregoryBrunel/runtipi-custom-appstore/issues/7" \
     --apply
 fi
