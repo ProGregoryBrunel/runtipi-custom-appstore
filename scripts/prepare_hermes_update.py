@@ -53,14 +53,14 @@ def build_update(root: Path, agent: str, webui: str, evidence: str) -> tuple[dic
     webui_numbers = numbers(webui, "webui")
     if not EVIDENCE.fullmatch(evidence):
         raise UpdateError("Compatibility evidence must be a GitHub issue or PR URL")
+    if (agent, webui) in BLOCKED_PAIRS:
+        raise UpdateError("This release pair is blocked following a compatibility report")
     if agent_numbers >= SESSION_DELETE_AGENT_MIN and webui_numbers <= SESSION_DELETE_WEBUI_MAX:
         raise UpdateError(
             "Update blocked: Agent v0.23.3+ with WebUI <=0.52.724 has a known "
             "session deletion regression (nesquena/hermes-webui#9213); review a "
             "stable WebUI release including fix #9218 before proposing the pair"
         )
-    if (agent, webui) in BLOCKED_PAIRS:
-        raise UpdateError("This release pair is blocked following a compatibility report")
 
     config_file = root / APP / "config.json"
     compose_file = root / APP / "docker-compose.yml"
