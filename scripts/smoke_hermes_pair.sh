@@ -29,10 +29,14 @@ cleanup() {
   status=$?
   if (( status != 0 )); then
     "${compose[@]}" ps || true
-    "${compose[@]}" logs --tail=80 || true
+    "${compose[@]}" logs --tail=25 || true
   fi
   "${compose[@]}" down -v --remove-orphans --timeout 15 || true
-  rm -rf -- "$data"
+  # Runtipi images create UID 1000-owned 0700 files. The GitHub runner is disposable.
+  # Only this exact job-owned RUNNER_TEMP subtree may be cleaned as root.
+  if [[ "$data" == "${RUNNER_TEMP}/hermes-ci-${GITHUB_RUN_ID}" ]]; then
+    sudo rm -rf -- "$data" || true
+  fi
 }
 trap cleanup EXIT
 
@@ -63,6 +67,6 @@ fi
 "${compose[@]}" up --pull always --detach --wait --wait-timeout 300
 
 # Check both real endpoints and the gateway-runtime session retirement contract.
-"${compose[@]}" exec -T hermes-webui python3 - < scripts/hermes_pair_runtime_probe.py
+"${compose[@]}" exec -T hermes-webui /app/venv/bin/python3 - < scripts/hermes_pair_runtime_probe.py
 
 echo "REAL_AGENT_WEBUI_PAIR: PASS"
