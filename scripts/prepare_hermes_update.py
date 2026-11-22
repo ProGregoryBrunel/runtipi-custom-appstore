@@ -15,9 +15,12 @@ AGENT = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 WEBUI = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 EVIDENCE = re.compile(r"^https://github\.com/[\w.-]+/[\w.-]+/(?:(?:issues|pull)/[1-9]\d*|actions/runs/[1-9]\d*)$", re.ASCII)
 IMAGES = {
-    "agent": re.compile(r"(?m)^(\s*image:\s*nousresearch/hermes-agent:)(v\d+\.\d+\.\d+)(\s*)$"),
-    "webui": re.compile(r"(?m)^(\s*image:\s*ghcr\.io/nesquena/hermes-webui:)(\d+\.\d+\.\d+)(\s*)$"),
+    "agent": re.compile(r"(?m)^(\s*image:\s*nousresearch/hermes-agent:)(v\d+\.\d+\.\d+)(?:@sha256:[0-9a-f]{64})?(\s*)$"),
+    "webui": re.compile(r"(?m)^(\s*image:\s*ghcr\.io/nesquena/hermes-webui:)(\d+\.\d+\.\d+)(?:@sha256:[0-9a-f]{64})?(\s*)$"),
 }
+DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
 # Release pair currently held due to reported session compatibility problems.
 # Do not remove without documented compatibility evidence and review.
 BLOCKED_PAIRS = {("v0.23.3", "0.52.702")}
@@ -40,17 +43,25 @@ def numbers(tag: str, kind: str) -> tuple[int, int, int]:
     return tuple(int(x) for x in match.groups())
 
 
-def single_replace(pattern: re.Pattern, content: str, old: str, new: str, label: str) -> str:
+def single_replace(pattern: re.Pattern, content: str, old: str, new: str, label: str, digest: str | None = None) -> str:
     hits = list(pattern.finditer(content))
     if len(hits) != 1 or hits[0].group(2) != old:
         raise UpdateError(f"Unexpected {label} pin: aborting")
     match = hits[0]
-    return content[:match.start(2)] + new + content[match.end(2):]
+    replacement = new + ("@" + digest if digest else "")
+    return content[:match.start(2)] + replacement + match.group(3) + content[match.end():]
 
 
-def build_update(root: Path, agent: str, webui: str, evidence: str) -> tuple[dict[Path, str], str]:
+def build_update(
+    root: Path, agent: str, webui: str, evidence: str,
+    agent_digest: str | None = None, webui_digest: str | None = None,
+) -> tuple[dict[Path, str], str]:
     agent_numbers = numbers(agent, "agent")
     webui_numbers = numbers(webui, "webui")
+    if (agent_digest is None) != (webui_digest is None):
+        raise UpdateError("Both image digests are required for a pinned publication")
+    if any(value is not None and not DIGEST.fullmatch(value) for value in (agent_digest, webui_digest)):
+        raise UpdateError("Invalid image manifest digest")
     if not EVIDENCE.fullmatch(evidence):
         raise UpdateError("Compatibility evidence must be a GitHub issue or PR URL")
     if (agent, webui) in BLOCKED_PAIRS:
@@ -105,8 +116,8 @@ def build_update(root: Path, agent: str, webui: str, evidence: str) -> tuple[dic
     ):
         raise UpdateError("Code volume does not match expected 2 mounts + declaration")
 
-    compose = single_replace(IMAGES["agent"], compose, current["agent"], agent, "agent")
-    compose = single_replace(IMAGES["webui"], compose, current["webui"], webui, "webui")
+    compose = single_replace(IMAGES["agent"], compose, current["agent"], agent, "agent", agent_digest)
+    compose = single_replace(IMAGES["webui"], compose, current["webui"], webui, "webui", webui_digest)
     if agent != current["agent"]:
         compose = compose.replace(old_volume, new_volume)
     if new_volume not in compose or compose.count(new_volume) != 3:
@@ -168,12 +179,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--agent", required=True, help="Agent image tag, e.g. v0.23.4")
     parser.add_argument("--webui", required=True, help="WebUI image tag, e.g. 0.52.703")
-    parser.add_argument("--evidence", required=True, help="GitHub review issue or PR URL")
+    parser.add_argument("--evidence", required=True, help="GitHub review issue, PR or Actions run URL")
+    parser.add_argument("--agent-digest", help="Immutable sha256 manifest digest for the Agent image")
+    parser.add_argument("--webui-digest", help="Immutable sha256 manifest digest for the WebUI image")
     parser.add_argument("--root", type=Path, default=ROOT, help="Catalog root (tests only)")
     parser.add_argument("--apply", action="store_true", help="Write only 3 known app catalog files")
     parser.add_argument("--body-file", type=Path, help="Write PR body on --apply")
     args = parser.parse_args()
-    changes, body = build_update(args.root, args.agent, args.webui, args.evidence)
+    changes, body = build_update(
+        args.root, args.agent, args.webui, args.evidence,
+        agent_digest=args.agent_digest, webui_digest=args.webui_digest,
+    )
     if args.apply:
         for file, content in changes.items():
             file.write_text(content, encoding="utf-8")
