@@ -69,6 +69,20 @@ class GeneratorTests(unittest.TestCase):
             with self.assertRaisesRegex(prep.UpdateError, "blocked"):
                 prep.build_update(root, "v0.23.3", "0.52.702", EVIDENCE)
 
+    def test_block_session_deletion_regression_through_stable_webui_052724(self):
+        # WebUI stable 0.52.724 still lacks fix #9218 for Agent v0.23.3+.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            for agent, webui in (
+                ("v0.23.3", "0.52.724"),
+                ("v0.23.4", "0.52.724"),
+                ("v0.23.3", "0.52.677"),
+            ):
+                with self.subTest(agent=agent, webui=webui):
+                    with self.assertRaisesRegex(prep.UpdateError, "session deletion regression"):
+                        prep.build_update(root, agent, webui, EVIDENCE)
+
     def test_reject_no_update_and_downgrade(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
