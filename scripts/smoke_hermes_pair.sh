@@ -36,11 +36,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Render the proposed catalog, not the currently installed compose.
-python3 scripts/prepare_hermes_update.py \
-  --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" \
-  --evidence "https://github.com/ProGregoryBrunel/runtipi-custom-appstore/issues/7" \
-  --apply
+# The PR self-test uses the known pinned baseline without a version change.
+# A scheduled candidate must generate and test the exact proposed catalog.
+if [[ "${HERMES_SMOKE_BASELINE:-0}" == "1" ]]; then
+  python3 - "$AGENT_VERSION" "$WEBUI_VERSION" <<'PY'
+import sys
+sys.path.insert(0, "scripts")
+from watch_hermes_updates import read_pins
+pins = read_pins(__import__("pathlib").Path("."))
+assert (pins["Agent"], pins["WebUI"]) == tuple(sys.argv[1:]), "Baseline tags differ"
+PY
+else
+  python3 scripts/prepare_hermes_update.py \
+    --agent "$AGENT_VERSION" --webui "$WEBUI_VERSION" \
+    --evidence "https://github.com/ProGregoryBrunel/runtipi-custom-appstore/issues/7" \
+    --apply
+fi
 
 # Check the resulting Compose without echoing synthetic environment values.
 "${compose[@]}" config --quiet
