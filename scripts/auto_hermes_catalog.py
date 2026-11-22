@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -65,7 +66,7 @@ def main() -> None:
 
     pins = watch.read_pins(ROOT)
     latest = {
-        name: watch.latest_stable(repo, None)
+        name: watch.latest_stable(repo, os.getenv('GITHUB_TOKEN'))
         for name, repo in watch.RELEASES.items()
     }
     result = choose(ROOT, pins, latest)
