@@ -5,7 +5,7 @@
 # in this reusable app-store manifest.
 services:
   hermes-agent:
-    image: nousresearch/hermes-agent:v0.23.3@sha256:3e9fe4c6ef36490f43aa0d0d80f9df64e9c92a576eee3042f1a97c8813c05355
+    image: nousresearch/hermes-agent:v0.23.4@sha256:ef0650d523ee1b5ab32c779acabc446d9936869a9932591553688a62bcf0c42f
     command: gateway run
     environment:
       - TZ=${TZ}
@@ -21,10 +21,10 @@ services:
       - ${APP_DATA_DIR}/hermes-home:/home/hermes/.hermes
       - ${APP_DATA_DIR}/opt-data:/opt/data
       - ${APP_DATA_DIR}/workspace:/workspace
-      - hermes-agent-src-v0233:/opt/hermes
+      - hermes-agent-src-v0234:/opt/hermes
 
   hermes-webui:
-    image: ghcr.io/nesquena/hermes-webui:0.52.731@sha256:46bde5757d7182cfee6978d1f2340c09b226a781353e14355b136b158de538bb
+    image: ghcr.io/nesquena/hermes-webui:0.52.732@sha256:6536ce0611faca518c3c6d07166601e4d1413abac4b7e43db58ec8ef75d0f09d
     depends_on:
       - hermes-agent
     environment:
@@ -43,14 +43,14 @@ services:
       - WANTED_GID=${HERMES_GID:-1000}
     volumes:
       - ${APP_DATA_DIR}/hermes-home:/home/hermeswebui/.hermes
-      - hermes-agent-src-v0233:/home/hermeswebui/.hermes/hermes-agent:ro
+      - hermes-agent-src-v0234:/home/hermeswebui/.hermes/hermes-agent:ro
       - ${APP_DATA_DIR}/workspace:/workspace
     x-runtipi:
       is_main: true
       internal_port: 8787
 
 volumes:
-  hermes-agent-src-v0233:
+  hermes-agent-src-v0234:
 
 x-runtipi:
   schema_version: 2
