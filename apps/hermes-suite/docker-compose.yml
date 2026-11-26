@@ -24,7 +24,7 @@ services:
       - hermes-agent-src-v0234:/opt/hermes
 
   hermes-webui:
-    image: ghcr.io/nesquena/hermes-webui:0.52.732@sha256:6536ce0611faca518c3c6d07166601e4d1413abac4b7e43db58ec8ef75d0f09d
+    image: ghcr.io/nesquena/hermes-webui:0.52.735@sha256:1c7b6a10f1fedd094cf53d1f36c8e96fb4e68107bfc3ca4064c9783af1c0978b
     depends_on:
       - hermes-agent
     environment:

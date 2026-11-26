@@ -6,12 +6,12 @@
   "no_gui": false,
   "dynamic_config": true,
   "port": 8787,
-  "tipi_version": 3,
+  "tipi_version": 4,
   "version": "0.23.4",
   "categories": [
     "ai"
   ],
-  "description": "Hermes Agent v0.23.4 with Hermes WebUI 0.52.732. Separate containers, shared persistent data, private gateway API.",
+  "description": "Hermes Agent v0.23.4 with Hermes WebUI 0.52.735. Separate containers, shared persistent data, private gateway API.",
   "short_desc": "Self-hosted Hermes AI agent with WebUI",
   "author": "NousResearch (Agent) and nesquena (WebUI)",
   "source": "https://github.com/NousResearch/hermes-agent",
