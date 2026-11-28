@@ -2,7 +2,7 @@
 
 ## Français
 
-Hermes Suite réunit [Hermes Agent](https://github.com/NousResearch/hermes-agent) `v0.23.4` et [Hermes WebUI](https://github.com/nesquena/hermes-webui) `0.52.735`, dans deux conteneurs distincts avec des données persistantes partagées.
+Hermes Suite réunit [Hermes Agent](https://github.com/NousResearch/hermes-agent) `v0.23.5` et [Hermes WebUI](https://github.com/nesquena/hermes-webui) `0.52.735`, dans deux conteneurs distincts avec des données persistantes partagées.
 
 > **Attention lors d'une migration :** si l'application Runtipi locale `hermes-suite:_user` fonctionne déjà, **n'installez pas cette version du catalogue tant que l'ancienne est en cours d'exécution**. Runtipi les considère comme deux applications différentes. Une installation classique démarre une seconde instance, avec ses propres données et sa propre passerelle, ce qui peut provoquer des conflits avec Telegram, les accès réseau et les données.
 
@@ -18,7 +18,7 @@ Hermes Suite réunit [Hermes Agent](https://github.com/NousResearch/hermes-agent
 
 ## English
 
-This app combines [Hermes Agent](https://github.com/NousResearch/hermes-agent) `v0.23.4` with [Hermes WebUI](https://github.com/nesquena/hermes-webui) `0.52.735`.
+This app combines [Hermes Agent](https://github.com/NousResearch/hermes-agent) `v0.23.5` with [Hermes WebUI](https://github.com/nesquena/hermes-webui) `0.52.735`.
 
 > **Migration warning:** If you already run the local Runtipi app `hermes-suite:_user`, **do not click Install while it is still running**. The store app has a different identity. Installing via the normal Runtipi UI starts another app with its own storage and gateway, which may conflict with Telegram, routing, and data.
 
